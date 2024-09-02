@@ -10,11 +10,13 @@ import cors from "cors";
 
 export const initApp = (app, express) => {
   app.use(cors());
-  app.use(express.json());
+  app.use((req, res, next) => {
+    req.originalUrl == "/orders/webhook" ? next() : express.json()(req,res,next);
+  });
 
   app.get("/", (req, res) => {
-    res.json  ("Welcome to E-commerce API");
-  })
+    res.json("Welcome to E-commerce API");
+  });
 
   app.use("/users", routers.userRouter);
 
