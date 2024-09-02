@@ -6,7 +6,7 @@ export const sendEmail = async (to, subject, html,attachments=[]) => {
 
     auth: {
       user: process.env.NODE_MAILER_SENDER_EMAIL,
-      pass: PROCESS.env.NODE_MAILER_PASS,
+      pass: process.env.NODE_MAILER_PASS,
     },
   });
 

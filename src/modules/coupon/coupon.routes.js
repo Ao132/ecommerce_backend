@@ -4,13 +4,14 @@ import { validation } from "../../middleware/validation.js";
 import { couponVal, updateCouponVal } from "./coupon.validation.js";
 
 import * as CC from "./coupon.controller.js";
+import { systemRoles } from "../../utils/system.roles.js";
 
 const couponRouter = Router();
 
 couponRouter.post(
   "/createCoupon",
   validation(couponVal),
-  auth(["admin"]),
+  auth(Object.values(systemRoles)),
   CC.createCoupon
 );
 couponRouter.put(

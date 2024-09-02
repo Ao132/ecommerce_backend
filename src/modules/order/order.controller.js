@@ -5,7 +5,9 @@ import { orderModel } from "../../../db/models/order.model.js";
 import { couponModel } from "../../../db/models/coupon.model.js";
 import { productModel } from "../../../db/models/product.model.js";
 import { createInvoice } from "../../utils/pdf.js";
-import { sendEmail } from "../../service/send.email.js"
+import { sendEmail } from "../../service/send.email.js";
+import { payment } from "../../utils/payment.js";
+import Stripe from "stripe";
 
 // ============================== createOrder =====================================//
 
@@ -16,7 +18,7 @@ export const createOrder = asyncHandler(async (req, res, next) => {
   if (couponCode) {
     const coupon = await couponModel.findOne({
       code: couponCode.toLowerCase(),
-      toDate: { $lte: Date.now() },
+      toDate: { $gte: Date.now() },
       usedBy: { $nin: [req.user._id] },
     });
 
@@ -89,31 +91,67 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     await cartModel.updateOne({ user: req.user._id }, { products: [] });
   }
 
-  const invoice = {
-    shipping: {
-      name: req.user.name,
-      address: req.user.address,
-      city: "anycity",
-      state: "anystate",
-      country: "anycountry",
-      postal_code: 12345,
-    },
-    products: order.products,
-    date: order.createdAt,
-    subtotal: subPrice,
-    paid: order.totalPrice,
-    invoice_nr: order._id,
-    coupon:req.body?.coupon?.amount||0
-  };
+  // const invoice = {
+  //   shipping: {
+  //     name: req.user.name,
+  //     address: req.user.address,
+  //     city: "anycity",
+  //     state: "anystate",
+  //     country: "anycountry",
+  //     postal_code: 12345,
+  //   },
+  //   products: order.products,
+  //   date: order.createdAt,
+  //   subtotal: subPrice,
+  //   paid: order.totalPrice,
+  //   invoice_nr: order._id,
+  //   coupon:req.body?.coupon?.amount||0
+  // };
 
-  await createInvoice(invoice, "invoice.pdf");
-  await sendEmail(req.user.email,"order placed","your order has been placed successfully",[
-    {
-      path: "invoice.pdf",
-      contentType: "application/pdf",
-      filename: `${req.user.name}'s invoice.pdf`,
+  // await createInvoice(invoice, "invoice.pdf");
+  // await sendEmail(req.user.email,"order placed","your order has been placed successfully",[
+  //   {
+  //     path: "invoice.pdf",
+  //     contentType: "application/pdf",
+  //     filename: `${req.user.name}'s invoice.pdf`,
+  //   }
+  // ])
+
+  if (paymentMethod == "card") {
+    const stripe = new Stripe(process.env.STRIPE_SECRET);
+
+    if (req?.body?.coupon) {
+      const coupon = await stripe.coupons.create({
+        percent_off: req?.body?.coupon?.amount,
+        duration: "once",
+      });
+      req.body.couponId = coupon.id;
     }
-  ])
+
+    const session = await payment({
+      stripe,
+      payment_method_types: ["card"],
+      mode: "payment",
+      customer_email: req.user.email,
+      metadata: {
+        orderId: order._id.toString(),
+      },
+      success_url: "http://sitename.com/checkout-success",
+      cancel_url: "http://sitename.com/checkout-cancel",
+      line_items: order.products.map((product) => {
+        return {
+          price_data: {
+            currency: "egp",
+            unit_amount: product.price * 100,
+            product_data: { name: product.title },
+          },
+          quantity: product.quantity,
+        };
+      }),
+      discounts: req?.body?.coupon ? [{ coupon: req.body.couponId }] : [],
+    });
+    res.status(200).json({ msg: "order created", url: session.url });
+  }
 
   res.status(200).json({ msg: "order created", order });
 });

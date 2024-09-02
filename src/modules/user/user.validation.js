@@ -1,5 +1,6 @@
 import joi from "joi";
 import { generalFiled } from "../../utils/general.joi.validation.js";
+import Joi from "joi";
 
 export const signUpValidation = {
   body: joi
@@ -7,13 +8,14 @@ export const signUpValidation = {
       name: generalFiled.name,
       email: generalFiled.email,
       password: generalFiled.password,
-      cPassword: generalFiled.rePassword,
-      phone: generalFiled.phone,
-      address: generalFiled.address,
+      // cPassword: generalFiled.rePassword,
+      // phone: generalFiled.phone,
+      // address: generalFiled.address,
 
       // gender: joi.string().valid("male", "female"),
+      age:joi.number()
     })
-    .with("password", "cPassword "),
+    // .with("password", "cPassword "),
 };
 export const signInValidation = joi.object({
   email: joi.string().email(),
