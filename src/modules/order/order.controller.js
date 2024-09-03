@@ -150,10 +150,10 @@ export const createOrder = asyncHandler(async (req, res, next) => {
       }),
       discounts: req?.body?.coupon ? [{ coupon: req.body.couponId }] : [],
     });
-    res.status(200).json({ msg: "order created", url: session.url, order });
+    return res.status(200).json({ msg: "order created", url: session.url, order });
   }
 
-  res.status(200).json({ msg: "order created", order });
+ return res.status(200).json({ msg: "order created", order });
 });
 
 // ============================== webhook =====================================//
@@ -229,5 +229,5 @@ export const cancelOrder = asyncHandler(async (req, res, next) => {
       { $inc: { stock: product.quantity } }
     );
   }
-  res.status(200).json({ msg: "order canceled" });
+ return res.status(200).json({ msg: "order canceled" });
 });
