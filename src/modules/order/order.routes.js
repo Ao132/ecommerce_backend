@@ -14,7 +14,7 @@ orderRouter.post(
   auth(Object.values(systemRoles)),
   OC.createOrder
 );
-orderRouter.post("/orders/webhook", express.raw({ type: "application/json" }),OC.webhook);
+orderRouter.post("/webhook", express.raw({ type: "application/json" }),OC.webhook);
 orderRouter.put(
   "/cancelOrder/:id",
   validation(cancelOrderVal),
