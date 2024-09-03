@@ -11,7 +11,11 @@ import cors from "cors";
 export const initApp = (app, express) => {
   app.use(cors());
   app.use((req, res, next) => {
-    req.originalUrl == "/orders/webhook" ? next() : express.json()(req,res,next);
+    if (req.originalUrl == "/orders/webhook") {
+      next();
+    } else {
+      express.json()(req, res, next);
+    }
   });
 
   app.get("/", (req, res) => {

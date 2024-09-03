@@ -150,7 +150,7 @@ export const createOrder = asyncHandler(async (req, res, next) => {
       }),
       discounts: req?.body?.coupon ? [{ coupon: req.body.couponId }] : [],
     });
-    res.status(200).json({ msg: "order created", url: session.url });
+    res.status(200).json({ msg: "order created", url: session.url, order });
   }
 
   res.status(200).json({ msg: "order created", order });
@@ -159,25 +159,34 @@ export const createOrder = asyncHandler(async (req, res, next) => {
 // ============================== webhook =====================================//
 
 export const webhook = asyncHandler(async (req, res, next) => {
+  
   const stripe = new Stripe(process.env.STRIPE_SECRET);
 
   const sig = req.headers["stripe-signature"];
   let event;
-  if (process.env.WEB_HOOK_SECRET) {
+  // if (process.env.WEB_HOOK_SECRET) {
+
+  try {
     event = stripe.webhooks.constructEvent(
       req.body,
       sig,
       process.env.WEB_HOOK_SECRET
     );
-  } else {
-    console.log("oh ya");
+    console.log("llllllll")
+    
+  } catch (err) {
+    console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    res.status(400).json({ error: err.message, err: "web" });
   }
 
   const { orderId } = event.data.object.metadata;
   if (event.type !== "checkout.session.completed") {
+    console.log("sssssssss")
     await orderModel.updateOne({ _id: orderId }, { status: "rejected" });
     return res.status(400).json({ msg: "order rejected" });
   }
+  console.log("nnnnnnnnn")
+
   await orderModel.updateOne({ _id: orderId }, { status: "placed" });
   return res.status(400).json({ msg: "order placed" });
 });
