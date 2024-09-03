@@ -177,7 +177,8 @@ export const webhook = asyncHandler(async (req, res, next) => {
     
   } catch (err) {
     console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaa")
-    res.status(400).json({ error: err.message, err: "web" });
+    return res.status(400).json({ error: err.message, err: "web" });
+     
   }
 
   const { orderId } = event.data.object.metadata;
